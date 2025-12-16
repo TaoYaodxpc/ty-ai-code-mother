@@ -1,10 +1,19 @@
-spring:
-  application:
-    name: ty-ai-code-mother-backend
 server:
   port: 8123
   servlet:
     context-path: /api
+
+spring:
+  application:
+    name: ty-ai-code-mother-backend
+  profiles:
+    active: local
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/yu_ai_code_mother
+    username: root
+    password: root123
 
 # springdoc-openapi 项目配置
 springdoc:
