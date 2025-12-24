@@ -4,10 +4,10 @@ server:
     context-path: /api
 
 spring:
-  application:
-    name: ty-ai-code-mother-backend
   profiles:
     active: local
+  application:
+    name: ty-ai-code-mother-backend
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
