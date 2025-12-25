@@ -10,6 +10,13 @@ import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * @author taoyao
+ * @date 2025/12/24
+ * @Version v1.0
+ * @description 代码保存类
+ */
+@Deprecated
 public class CodeFileSaver {
 
     // 文件保存根目录
