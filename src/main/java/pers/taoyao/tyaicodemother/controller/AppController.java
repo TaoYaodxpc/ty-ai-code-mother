@@ -2,17 +2,14 @@ package pers.taoyao.tyaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.annotation.AuthCheck;
@@ -24,19 +21,18 @@ import pers.taoyao.tyaicodemother.constant.UserConstant;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.exception.ThrowUtils;
-import pers.taoyao.tyaicodemother.model.dto.app.AppAddRequest;
-import pers.taoyao.tyaicodemother.model.dto.app.AppAdminUpdateRequest;
-import pers.taoyao.tyaicodemother.model.dto.app.AppQueryRequest;
-import pers.taoyao.tyaicodemother.model.dto.app.AppUpdateRequest;
+import pers.taoyao.tyaicodemother.model.dto.app.*;
 import pers.taoyao.tyaicodemother.model.entity.App;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.vo.AppVO;
 import pers.taoyao.tyaicodemother.service.AppService;
-import org.springframework.web.bind.annotation.RestController;
 import pers.taoyao.tyaicodemother.service.UserService;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 应用 控制层。
@@ -52,6 +48,57 @@ public class AppController {
 
     @Resource
     private AppService appService;
+
+    @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
+                                                       @RequestParam String message,
+                                                       HttpServletRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务生成代码
+        Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
+        return contentFlux.map(chunk -> {
+                    Map<String, String> wrapper = Map.of("d", chunk);
+                    String jsonData = JSONUtil.toJsonStr(wrapper);
+                    return ServerSentEvent.<String>builder()
+                            .data(jsonData)
+                            .build();
+                })
+                .concatWith(Mono.just(
+                        // 发送结束事件（当所有 SSE 流结束时，增加一个结束片段）
+                        ServerSentEvent.<String>builder()
+                                .event("done")
+                                .data("")
+                                .build()
+                ));
+    }
+
+    /**
+     * 部署应用
+     *
+     * @param appDeployRequest 部署请求
+     * @param request          请求
+     * @return 部署 URL
+     */
+    @PostMapping("/deploy")
+    public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        // 检查部署请求是否为空
+        ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取 应用 ID
+        Long appId = appDeployRequest.getAppId();
+        // 检查应用 ID 是否为空
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务部署应用
+        String deployUrl = appService.deployApp(appId, loginUser);
+        ThrowUtils.throwIf(deployUrl == null, ErrorCode.OPERATION_ERROR, "部署失败");
+        // 返回部署 URL
+        return ResultUtils.success(deployUrl);
+    }
 
     /**
      * 创建应用
@@ -74,7 +121,7 @@ public class AppController {
         app.setUserId(loginUser.getId());
         // 应用名称暂时为 initPrompt 前 12 位
         app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
-        // 暂时设置为多文件生成
+        // TODO: 暂时设置为多文件生成
         app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
         // 插入数据库
         boolean result = appService.save(app);
@@ -141,7 +188,7 @@ public class AppController {
     /**
      * 根据 id 获取应用详情
      *
-     * @param id      应用 id
+     * @param id 应用 id
      * @return 应用详情
      */
     @GetMapping("/get/vo")
@@ -262,6 +309,9 @@ public class AppController {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         long pageNum = appQueryRequest.getPageNum();
         long pageSize = appQueryRequest.getPageSize();
+        if (appQueryRequest.getCodeGenType() == null || appQueryRequest.getCodeGenType().isEmpty()) {
+            appQueryRequest.setCodeGenType(null);
+        }
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
         Page<App> appPage = appService.page(Page.of(pageNum, pageSize), queryWrapper);
         // 数据封装

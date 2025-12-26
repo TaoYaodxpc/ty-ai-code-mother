@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import pers.taoyao.tyaicodemother.ai.model.HtmlCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.MultiFileCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
+import pers.taoyao.tyaicodemother.constant.AppConstant;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 public class CodeFileSaver {
 
     // 文件保存根目录
-    private static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    private static final String FILE_SAVE_ROOT_DIR = AppConstant.CODE_OUTPUT_ROOT_DIR;
 
     /**
      * 保存 HtmlCodeResult

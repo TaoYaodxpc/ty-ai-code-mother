@@ -4,7 +4,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import pers.taoyao.tyaicodemother.model.dto.app.AppQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.App;
+import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.vo.AppVO;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -14,6 +16,25 @@ import java.util.List;
  * @author <a href="https://github.com/TaoYaodxpc">TaoYao</a>
  */
 public interface AppService extends IService<App> {
+
+    /**
+     * 通过对话生成应用代码
+     *
+     * @param appId 应用 ID
+     * @param message 消息
+     * @param loginUser 登录用户
+     * @return 生成的代码
+     */
+    Flux<String> chatToGenCode(Long appId, String message, User loginUser);
+
+    /**
+     * 部署应用
+     *
+     * @param appId 应用 ID
+     * @param loginUser 登录用户
+     * @return 部署结果（可访问的部署地址）
+     */
+    String deployApp(Long appId, User loginUser);
 
     /**
      * 获取应用视图对象
@@ -38,4 +59,5 @@ public interface AppService extends IService<App> {
      * @return 应用视图对象列表
      */
     List<AppVO> getAppVOList(List<App> appList);
+
 }
