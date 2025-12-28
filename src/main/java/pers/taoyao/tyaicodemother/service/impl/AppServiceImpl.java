@@ -9,6 +9,7 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.constant.AppConstant;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 /**
  * 应用 服务层实现
  */
+@Slf4j
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
@@ -168,6 +170,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             appVO.setUser(userVO);
             return appVO;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public String genAppName(String initPrompt, String userName) {
+        String userMessage = "请根据 App 描述信息和用户名称生成一个 App 名称，要求不超过 12 个字，只需要返回名称即可。\n 描述信息：" + initPrompt + "\n" + "用户名称：" + userName;
+        String appName = aiCodeGeneratorFacade.generateAppName(userMessage);
+        log.info("生成应用名称：{}", appName);
+        return appName;
     }
 
 }

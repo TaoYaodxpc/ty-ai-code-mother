@@ -115,12 +115,15 @@ public class AppController {
         ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
         // 获取当前登录用户
         User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "未登录");
+        // TODO: 使用 AI 根据用户初始的提示词和用户名生成应用名称
+        String appName = appService.genAppName(appAddRequest.getInitPrompt(), loginUser.getUserName());
         // 构造入库对象
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
         app.setUserId(loginUser.getId());
         // 应用名称暂时为 initPrompt 前 12 位
-        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        app.setAppName(appName);
         // TODO: 暂时设置为多文件生成
         app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
         // 插入数据库
@@ -181,7 +184,9 @@ public class AppController {
         if (!oldApp.getUserId().equals(loginUser.getId()) && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+        // 操作数据库，执行删除
         boolean result = appService.removeById(id);
+        // TODO: 清理本地的生成的文件
         return ResultUtils.success(result);
     }
 

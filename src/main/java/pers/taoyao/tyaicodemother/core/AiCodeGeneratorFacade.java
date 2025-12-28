@@ -11,6 +11,7 @@ import pers.taoyao.tyaicodemother.core.parser.CodeParserExecutor;
 import pers.taoyao.tyaicodemother.core.saver.CodeFileSaverExecutor;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
+import pers.taoyao.tyaicodemother.exception.ThrowUtils;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
@@ -24,6 +25,11 @@ public class AiCodeGeneratorFacade {
 
     @Resource
     private AiCodeGeneratorService aiCodeGeneratorService;
+
+    public String generateAppName(String userMessage) {
+        ThrowUtils.throwIf(userMessage == null, ErrorCode.PARAMS_ERROR, "用户提示词不能为空");
+        return aiCodeGeneratorService.generateAppName(userMessage);
+    }
 
     /**
      * 统一入口：根据类型生成并保存代码

@@ -60,4 +60,11 @@ public interface AppService extends IService<App> {
      */
     List<AppVO> getAppVOList(List<App> appList);
 
+    /**
+     * 生成应用名称
+     *
+     * @param initPrompt 初始提示
+     * @param userName 登录用户名
+     */
+    String genAppName(String initPrompt, String userName);
 }

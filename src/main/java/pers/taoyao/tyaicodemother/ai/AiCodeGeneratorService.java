@@ -20,6 +20,15 @@ public interface AiCodeGeneratorService {
      * @param userMessage 用户消息
      * @return 生成的代码结果
      */
+    @SystemMessage(fromResource = "prompt/appNameGen-system-prompt.txt")
+    String generateAppName(String userMessage);
+
+    /**
+     * 生成 HTML 代码
+     *
+     * @param userMessage 用户消息
+     * @return 生成的代码结果
+     */
     @SystemMessage(fromResource = "prompt/codegen-html-system-prompt.txt")
     HtmlCodeResult generateHtmlCode(String userMessage);
 
