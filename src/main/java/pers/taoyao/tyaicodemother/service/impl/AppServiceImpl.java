@@ -21,13 +21,16 @@ import pers.taoyao.tyaicodemother.mapper.AppMapper;
 import pers.taoyao.tyaicodemother.model.dto.app.AppQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.App;
 import pers.taoyao.tyaicodemother.model.entity.User;
+import pers.taoyao.tyaicodemother.model.enums.ChatHistoryMessageTypeEnum;
 import pers.taoyao.tyaicodemother.model.vo.AppVO;
 import pers.taoyao.tyaicodemother.model.vo.UserVO;
 import pers.taoyao.tyaicodemother.service.AppService;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.service.UserService;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +51,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
 
+    @Resource
+    private ChatHistoryService chatHistoryService;
+
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
         // 1. 参数校验
@@ -62,8 +68,26 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 4. 获取应用的代码生成类型
         CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(app.getCodeGenType());
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR, "代码生成类型错误");
-        // 5. 调用 AI 生成代码
-        return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        // 5. 在调用 AI 前，先保存用户消息到数据库中
+        chatHistoryService.addChatHistory(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
+        // 6. 调用 AI 生成代码（流式）
+        Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        // 7. 收集 AI 响应的内容，并且在完成后保存记录到对话历史
+        StringBuilder aiResponseBuilder = new StringBuilder();
+        return contentFlux.map(chunk -> {
+            // 拼接 AI 响应内容
+            aiResponseBuilder.append(chunk);
+            return chunk;
+        }).doOnComplete(() -> {
+            // 流式返回完成后，保存 AI 消息到对话历史中
+            String aiResponse = aiResponseBuilder.toString();
+            chatHistoryService.addChatHistory(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+        }).doOnError(error -> {
+            log.error("AI 响应错误：{}", error.getMessage());
+            // 即使 AI 回复失败，也需要保存记录到数据库中
+            String errorMessage = "AI 回复失败：" + error.getMessage();
+            chatHistoryService.addChatHistory(appId, errorMessage, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+        });
     }
 
     @Override
@@ -180,4 +204,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         return appName;
     }
 
+    /**
+     * 删除（根据 APP ID 删除）
+     *
+     * @param id
+     * @return 删除结果
+     */
+    @Override
+    public boolean removeById(Serializable id) {
+        // 1. 参数校验
+        if (id == null) {
+            return false;
+        }
+        long appId = Long.parseLong(id.toString());
+        if (appId <= 0) {
+            return false;
+        }
+        // 2. 操作数据库
+        // 2.1 删除聊天记录
+        try {
+            chatHistoryService.deleteByAppId(appId);
+        } catch (Exception e) {
+            log.error("删除应用对话历史信息失败：{}", e.getMessage());
+        }
+        // 2.2 删除应用信息
+        return super.removeById(id);
+    }
 }
