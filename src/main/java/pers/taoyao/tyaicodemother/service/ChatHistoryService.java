@@ -3,6 +3,7 @@ package pers.taoyao.tyaicodemother.service;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import pers.taoyao.tyaicodemother.model.dto.chathistory.ChatHistoryQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.ChatHistory;
 import pers.taoyao.tyaicodemother.model.entity.User;
@@ -47,6 +48,16 @@ public interface ChatHistoryService extends IService<ChatHistory> {
     Page<ChatHistory> listAppChatHistoryByPage(Long appId, int pageSize,
                                                LocalDateTime lastCreateTime,
                                                User loginUser);
+
+    /**
+     * 加载对话历史到内存
+     *
+     * @param appId 应用 ID
+     * @param chatMemory 对话记忆
+     * @param maxCount 最大数量
+     * @return 加载数量
+     */
+    int loadChatHistory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 
     /**
      * 获取查询条件

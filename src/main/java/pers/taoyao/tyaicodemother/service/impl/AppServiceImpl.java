@@ -200,6 +200,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     public String genAppName(String initPrompt, String userName) {
         String userMessage = "请根据 App 描述信息和用户名称生成一个 App 名称，要求不超过 12 个字，只需要返回名称即可。\n 描述信息：" + initPrompt + "\n" + "用户名称：" + userName;
         String appName = aiCodeGeneratorFacade.generateAppName(userMessage);
+        // 如果 ai 生成 appName 为 null，则使用 initPrompt 的前 10 位
+        if (appName == null) {
+            appName = initPrompt.substring(0, Math.min(initPrompt.length(), 12));
+        }
         log.info("生成应用名称：{}", appName);
         return appName;
     }

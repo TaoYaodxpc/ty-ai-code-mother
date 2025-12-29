@@ -3,7 +3,10 @@ package pers.taoyao.tyaicodemother.core;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import pers.taoyao.tyaicodemother.ai.AiAppNameGeneratorService;
 import pers.taoyao.tyaicodemother.ai.AiCodeGeneratorService;
+import pers.taoyao.tyaicodemother.ai.AiCodeGeneratorServiceFactory;
+import pers.taoyao.tyaicodemother.ai.model.AppNameResult;
 import pers.taoyao.tyaicodemother.ai.model.HtmlCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.MultiFileCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
@@ -24,11 +27,19 @@ import java.io.File;
 public class AiCodeGeneratorFacade {
 
     @Resource
-    private AiCodeGeneratorService aiCodeGeneratorService;
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
+
+    @Resource
+    private AiAppNameGeneratorService aiAppNameGeneratorService;
 
     public String generateAppName(String userMessage) {
         ThrowUtils.throwIf(userMessage == null, ErrorCode.PARAMS_ERROR, "用户提示词不能为空");
-        return aiCodeGeneratorService.generateAppName(userMessage);
+        AppNameResult appNameResult = aiAppNameGeneratorService.generateAppName(userMessage);
+        if (appNameResult == null) {
+            log.error("生成应用名称失败");
+            return null;
+        }
+        return appNameResult.getAppName();
     }
 
     /**
@@ -42,6 +53,8 @@ public class AiCodeGeneratorFacade {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空");
         }
+        // 根据 appId 创建服务实例
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -70,6 +83,8 @@ public class AiCodeGeneratorFacade {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空");
         }
+        // 根据 appId 创建服务实例
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 Flux<String> result = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
