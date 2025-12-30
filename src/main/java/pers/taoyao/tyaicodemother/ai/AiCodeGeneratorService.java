@@ -2,6 +2,7 @@ package pers.taoyao.tyaicodemother.ai;
 
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.service.UserMessage;
 import pers.taoyao.tyaicodemother.ai.model.HtmlCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.MultiFileCodeResult;
@@ -69,7 +70,7 @@ public interface AiCodeGeneratorService {
      * @return 生成的代码结果
      */
     @SystemMessage(fromResource = "prompt/codegen-vue-project-system-prompt.txt")
-    Flux<String> generateVueProjectCodeStream(@MemoryId long appId, @UserMessage String userMessage);
+    TokenStream generateVueProjectCodeStream(@MemoryId long appId, @UserMessage String userMessage);
 
 }
 

@@ -41,7 +41,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     private AppService appService;
 
     @Override
-    public boolean addChatHistory(Long appId, String message, String messageType, Long userId) {
+    public boolean addChatMessage(Long appId, String message, String messageType, Long userId) {
         // 1. 基础校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "消息不能为空");

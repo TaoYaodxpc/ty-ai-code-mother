@@ -1,5 +1,9 @@
 package pers.taoyao.tyaicodemother.core;
 
+import cn.hutool.json.JSONUtil;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.tool.ToolExecution;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,6 +14,9 @@ import pers.taoyao.tyaicodemother.ai.model.AppNameResult;
 import pers.taoyao.tyaicodemother.ai.model.HtmlCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.MultiFileCodeResult;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
+import pers.taoyao.tyaicodemother.ai.model.message.AiResponseMessage;
+import pers.taoyao.tyaicodemother.ai.model.message.ToolExecutedMessage;
+import pers.taoyao.tyaicodemother.ai.model.message.ToolRequestMessage;
 import pers.taoyao.tyaicodemother.core.parser.CodeParserExecutor;
 import pers.taoyao.tyaicodemother.core.saver.CodeFileSaverExecutor;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
@@ -76,7 +83,7 @@ public class AiCodeGeneratorFacade {
      *
      * @param userMessage     用户提示词
      * @param codeGenTypeEnum 生成类型
-     * @param appId        应用 ID
+     * @param appId           应用 ID
      * @return 处理后的代码流
      */
     public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
@@ -95,8 +102,8 @@ public class AiCodeGeneratorFacade {
                 yield processCodeStream(codeStream, CodeGenTypeEnum.MULTI_FILE, appId);
             }
             case VUE_PROJECT -> {
-                Flux<String> codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processCodeStream(codeStream, CodeGenTypeEnum.MULTI_FILE, appId);
+                TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
+                yield processTokenStream(tokenStream);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -106,11 +113,42 @@ public class AiCodeGeneratorFacade {
     }
 
     /**
+     * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
+     *
+     * @param tokenStream TokenStream 对象
+     * @return Flux<String> 流式响应
+     */
+    private Flux<String> processTokenStream(TokenStream tokenStream) {
+        return Flux.create(sink -> {
+            tokenStream.onPartialResponse((String partialResponse) -> {
+                        AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
+                        sink.next(JSONUtil.toJsonStr(aiResponseMessage));
+                    })
+                    .onPartialToolExecutionRequest((index, toolExecutionRequest) -> {
+                        ToolRequestMessage toolRequestMessage = new ToolRequestMessage(toolExecutionRequest);
+                        sink.next(JSONUtil.toJsonStr(toolRequestMessage));
+                    })
+                    .onToolExecuted((ToolExecution toolExecution) -> {
+                        ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
+                        sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
+                    })
+                    .onCompleteResponse((ChatResponse response) -> {
+                        sink.complete();
+                    })
+                    .onError((Throwable error) -> {
+                        error.printStackTrace();
+                        sink.error(error);
+                    })
+                    .start();
+        });
+    }
+
+    /**
      * 通用 处理代码流式返回，并保存代码
      *
-     * @param codeStream 代码流
+     * @param codeStream  代码流
      * @param codeGenType 生成类型
-     * @param appId        应用 ID
+     * @param appId       应用 ID
      * @return 处理后的代码流
      */
     private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenTypeEnum codeGenType, Long appId) {

@@ -26,7 +26,7 @@ public interface ChatHistoryService extends IService<ChatHistory> {
      * @param userId 用户 ID
      * @return 是否添加成功
      */
-    boolean addChatHistory(Long appId, String message, String messageType, Long userId);
+    boolean addChatMessage(Long appId, String message, String messageType, Long userId);
 
     /**
      * 根据应用 ID 删除对话历史
