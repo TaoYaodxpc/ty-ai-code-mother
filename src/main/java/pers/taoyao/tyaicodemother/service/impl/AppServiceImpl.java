@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.constant.AppConstant;
 import pers.taoyao.tyaicodemother.core.AiCodeGeneratorFacade;
+import pers.taoyao.tyaicodemother.core.builder.VueProjectBuilder;
 import pers.taoyao.tyaicodemother.core.handler.StreamHandlerExecutor;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
@@ -57,6 +58,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private StreamHandlerExecutor streamHandlerExecutor;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
 
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
@@ -105,21 +109,33 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!sourceFile.exists() || !sourceFile.isDirectory()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "原始应用代码生成目录不存在，请先生成应用");
         }
-        // 7. 复制文件到部署目录
+        // 7. Vue 项目特殊处理: 执行构建
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT) {
+            // Vue 项目需要构建
+            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess, ErrorCode.SYSTEM_ERROR, "Vue 项目构建失败, 请重试");
+            // 检查 dist 目录是否存在
+            File distDir = new File(sourceDirPath, "dist");
+            ThrowUtils.throwIf(!distDir.exists() || !distDir.isDirectory(), ErrorCode.SYSTEM_ERROR, "Vue 项目构建完成，但未生成 dist 目录, 请重试");
+            // 构建完成后，需要将构建后的文件复制到部署目录
+            sourceFile = distDir;
+        }
+        // 8. 复制文件到部署目录
         String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
         try {
             FileUtil.copyContent(sourceFile, new File(deployDirPath), true);
         } catch (IORuntimeException e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用部署失败：" + e.getMessage());
         }
-        // 8. 更新数据库
+        // 9. 更新数据库
         App updateApp = new App();
         updateApp.setDeployKey(deployKey);
         updateApp.setId(appId);
         updateApp.setDeployedTime(LocalDateTime.now());
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        // 9. 返回可访问的 URL 地址
+        // 10. 返回可访问的 URL 地址
         return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
     }
 
