@@ -2,6 +2,7 @@ package pers.taoyao.tyaicodemother.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import pers.taoyao.tyaicodemother.model.dto.app.AppAddRequest;
 import pers.taoyao.tyaicodemother.model.dto.app.AppQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.App;
 import pers.taoyao.tyaicodemother.model.entity.User;
@@ -16,6 +17,15 @@ import java.util.List;
  * @author <a href="https://github.com/TaoYaodxpc">TaoYao</a>
  */
 public interface AppService extends IService<App> {
+
+    /**
+     * 创建应用
+     *
+     * @param appAddRequest 应用添加请求
+     * @param loginUser 登录用户
+     * @return 应用 ID
+     */
+    Long createApp(AppAddRequest appAddRequest, User loginUser);
 
     /**
      * 通过对话生成应用代码
