@@ -35,7 +35,7 @@ public class JsonMessageStreamHandler {
      *
      * @param originFlux         原始流
      * @param chatHistoryService 聊天历史服务
-     * @param appId              应用ID
+     * @param appId              应用 ID
      * @param loginUser          登录用户
      * @return 处理后的流
      */

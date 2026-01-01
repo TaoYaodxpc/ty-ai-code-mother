@@ -28,6 +28,7 @@ import pers.taoyao.tyaicodemother.model.vo.AppVO;
 import pers.taoyao.tyaicodemother.model.vo.UserVO;
 import pers.taoyao.tyaicodemother.service.AppService;
 import pers.taoyao.tyaicodemother.service.ChatHistoryService;
+import pers.taoyao.tyaicodemother.service.ScreenshotService;
 import pers.taoyao.tyaicodemother.service.UserService;
 import reactor.core.publisher.Flux;
 
@@ -61,6 +62,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private ScreenshotService screenshotService;
 
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
@@ -136,7 +140,26 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 10. 返回可访问的 URL 地址
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 11. 异步生成截图并且更新应用封面
+        // TODO: 消息队列优化（由于 webDriver 只有一个，可能会有线程并发问题）
+        generateAppScreenshotAsync(appId, appDeployUrl);
+        return appDeployUrl;
+    }
+
+    @Override
+    public void generateAppScreenshotAsync(Long appId, String appDeployUrl) {
+        // 使用虚拟线程并执行
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成截图并上传
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appDeployUrl);
+            // 更新数据库的封面
+            App updateApp = new App();
+            updateApp.setId(appId);
+            updateApp.setCover(screenshotUrl);
+            boolean updateResult = this.updateById(updateApp);
+            ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用封面字段失败");
+        });
     }
 
     @Override
