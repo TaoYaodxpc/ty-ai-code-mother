@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
-import pers.taoyao.tyaicodemother.ai.tools.FileWriteTool;
+import pers.taoyao.tyaicodemother.ai.tools.*;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.service.ChatHistoryService;
@@ -52,6 +52,9 @@ public class AiCodeGeneratorServiceFactory {
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private ToolManager toolManager;
 
     /**
      * AI 服务实例缓存
@@ -117,13 +120,11 @@ public class AiCodeGeneratorServiceFactory {
             // Vue 项目生成，使用工具调用和推理模型
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
                     .streamingChatModel(reasoningStreamingChatModel)
-                    // 根据 appId 创建一个唯一的聊天内存
                     .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(new FileWriteTool())
-                    //  hallucinatedToolNameStrategy 配置，当调用的 tool 不存在时，返回错误信息（处理工具调用幻觉问题）
-                    .hallucinatedToolNameStrategy(toolExecutionRequest ->
-                            ToolExecutionResultMessage.from(toolExecutionRequest,
-                                    "Error: there is no tool called " + toolExecutionRequest.name()))
+                    .tools(toolManager.getAllTools())
+                    .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                            toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
+                    ))
                     .build();
             // HTML 和 多文件生成，使用流式对话模型
             case HTML, MULTI_FILE -> AiServices.builder(AiCodeGeneratorService.class)
