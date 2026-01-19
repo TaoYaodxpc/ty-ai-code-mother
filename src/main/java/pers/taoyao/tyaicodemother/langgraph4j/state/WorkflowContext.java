@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.bsc.langgraph4j.prebuilt.MessagesState;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.langgraph4j.model.ImageResource;
+import pers.taoyao.tyaicodemother.langgraph4j.model.QualityResult;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -46,6 +47,11 @@ public class WorkflowContext implements Serializable {
      * 图片资源列表
      */
     private List<ImageResource> imageList;
+
+    /**
+     * 质量检查结果
+     */
+    private QualityResult qualityResult;
 
     /**
      * 增强后的提示词
