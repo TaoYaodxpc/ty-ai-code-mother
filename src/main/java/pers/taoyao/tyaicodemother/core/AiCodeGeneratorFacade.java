@@ -8,6 +8,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pers.taoyao.tyaicodemother.ai.AiAppNameGeneratorService;
+import pers.taoyao.tyaicodemother.ai.AiAppNameGeneratorServiceFactory;
 import pers.taoyao.tyaicodemother.ai.AiCodeGeneratorService;
 import pers.taoyao.tyaicodemother.ai.AiCodeGeneratorServiceFactory;
 import pers.taoyao.tyaicodemother.ai.model.AppNameResult;
@@ -37,10 +38,11 @@ public class AiCodeGeneratorFacade {
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     @Resource
-    private AiAppNameGeneratorService aiAppNameGeneratorService;
+    private AiAppNameGeneratorServiceFactory aiAppNameGeneratorServiceFactory;
 
     public String generateAppName(String userMessage) {
         ThrowUtils.throwIf(userMessage == null, ErrorCode.PARAMS_ERROR, "用户提示词不能为空");
+        AiAppNameGeneratorService aiAppNameGeneratorService = aiAppNameGeneratorServiceFactory.createAiAppNameGeneratorService();
         AppNameResult appNameResult = aiAppNameGeneratorService.generateAppName(userMessage);
         if (appNameResult == null) {
             log.error("生成应用名称失败");

@@ -15,7 +15,7 @@ import pers.taoyao.tyaicodemother.langgraph4j.tools.UndrawIllustrationTool;
 @Configuration
 public class ImageCollectionServiceFactory {
 
-    @Resource
+    @Resource(name = "openAiChatModel")
     private ChatModel chatModel;
 
     @Resource
