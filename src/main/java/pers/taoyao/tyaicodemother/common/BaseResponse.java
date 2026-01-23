@@ -1,11 +1,13 @@
 package pers.taoyao.tyaicodemother.common;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 
 import java.io.Serializable;
 
 @Data
+@NoArgsConstructor
 public class BaseResponse<T> implements Serializable {
 
     private int code;
