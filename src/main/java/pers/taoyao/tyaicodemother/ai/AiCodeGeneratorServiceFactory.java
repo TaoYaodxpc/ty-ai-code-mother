@@ -12,6 +12,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pers.taoyao.tyaicodemother.ai.guardrail.PromptSafetyInputGuardrail;
+import pers.taoyao.tyaicodemother.ai.guardrail.RetryOutputGuardrail;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.ai.tools.*;
 import pers.taoyao.tyaicodemother.config.ReasoningStreamingChatModelConfig;
@@ -124,26 +126,32 @@ public class AiCodeGeneratorServiceFactory {
                 // 使用多例模式的 StreamingChatModel 解决并发问题
                 StreamingChatModel reasoningStreamingChatModel = SpringContextUtil.getBean("reasoningStreamingChatModelPrototype", StreamingChatModel.class);
                 yield AiServices.builder(AiCodeGeneratorService.class)
-                    .streamingChatModel(reasoningStreamingChatModel)
-                    .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(toolManager.getAllTools())
-                    .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
-                            toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
-                    ))
-                    .build();
+                        .streamingChatModel(reasoningStreamingChatModel)
+                        .chatMemoryProvider(memoryId -> chatMemory)
+                        .tools(toolManager.getAllTools())
+                        .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                                toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
+                        ))
+                        .maxSequentialToolsInvocations(20) // 最多连续调用 20 次工具
+                        .inputGuardrails(new PromptSafetyInputGuardrail()) // 添加输入护轨
+                        // .outputGuardrails(new RetryOutputGuardrail()) // 添加输出护轨，为了流式输出，这里不使用输出护轨
+                        .build();
             }
             // HTML 和 多文件生成，使用流式对话模型
             case HTML, MULTI_FILE -> {
                 // 使用多例模式的 StreamingChatModel 解决并发问题
                 StreamingChatModel openAiStreamingChatModel = SpringContextUtil.getBean("streamingChatModelPrototype", StreamingChatModel.class);
                 yield AiServices.builder(AiCodeGeneratorService.class)
-                    .chatModel(chatModel)
-                    .streamingChatModel(openAiStreamingChatModel)
-                    // 根据 appId 创建一个唯一的聊天内存
-                    .chatMemory(chatMemory)
-                    .build();
+                        .chatModel(chatModel)
+                        .streamingChatModel(openAiStreamingChatModel)
+                        // 根据 appId 创建一个唯一的聊天内存
+                        .chatMemory(chatMemory)
+                        .inputGuardrails(new PromptSafetyInputGuardrail()) // 添加输入护轨
+                        // .outputGuardrails(new RetryOutputGuardrail()) // 添加输出护轨，为了流式输出，这里不使用输出护轨
+                        .build();
             }
-            default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的代码生成类型: " + codeGenType.getValue());
+            default ->
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的代码生成类型: " + codeGenType.getValue());
         };
     }
 
