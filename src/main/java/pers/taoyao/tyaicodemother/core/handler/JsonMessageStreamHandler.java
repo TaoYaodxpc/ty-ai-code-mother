@@ -1,6 +1,5 @@
 package pers.taoyao.tyaicodemother.core.handler;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -10,8 +9,6 @@ import org.springframework.stereotype.Component;
 import pers.taoyao.tyaicodemother.ai.model.message.*;
 import pers.taoyao.tyaicodemother.ai.tools.BaseTool;
 import pers.taoyao.tyaicodemother.ai.tools.ToolManager;
-import pers.taoyao.tyaicodemother.constant.AppConstant;
-import pers.taoyao.tyaicodemother.core.builder.VueProjectBuilder;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.enums.ChatHistoryMessageTypeEnum;
 import pers.taoyao.tyaicodemother.service.ChatHistoryService;
@@ -27,9 +24,6 @@ import java.util.Set;
 @Slf4j
 @Component
 public class JsonMessageStreamHandler {
-
-    @Resource
-    private VueProjectBuilder vueProjectBuilder;
 
     @Resource
     private ToolManager toolManager;
@@ -61,9 +55,9 @@ public class JsonMessageStreamHandler {
                     // 流式响应完成后，添加 AI 消息到对话历史
                     String aiResponse = chatHistoryStringBuilder.toString();
                     chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-                    String projectDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
                     // TODO: 异步构建 vue 项目，后续修复问题
-                    vueProjectBuilder.buildProjectAsync(projectDirPath);
+                    /*String projectDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                    vueProjectBuilder.buildProjectAsync(projectDirPath);*/
                 })
                 .doOnError(error -> {
                     // 如果AI回复失败，也要记录错误消息

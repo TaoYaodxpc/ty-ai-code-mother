@@ -28,7 +28,7 @@ public class ReasoningStreamingChatModelConfig {
 
     private Integer maxTokens;
 
-    private Double temperature;
+    // private Double temperature;
 
     private Boolean logRequests = false;
 
@@ -42,7 +42,7 @@ public class ReasoningStreamingChatModelConfig {
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .maxTokens(maxTokens)
-                .temperature(temperature)
+                // .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
                 .build();

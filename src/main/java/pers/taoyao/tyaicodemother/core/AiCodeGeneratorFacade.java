@@ -18,6 +18,8 @@ import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.ai.model.message.AiResponseMessage;
 import pers.taoyao.tyaicodemother.ai.model.message.ToolExecutedMessage;
 import pers.taoyao.tyaicodemother.ai.model.message.ToolRequestMessage;
+import pers.taoyao.tyaicodemother.constant.AppConstant;
+import pers.taoyao.tyaicodemother.core.builder.VueProjectBuilder;
 import pers.taoyao.tyaicodemother.core.parser.CodeParserExecutor;
 import pers.taoyao.tyaicodemother.core.saver.CodeFileSaverExecutor;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
@@ -39,6 +41,9 @@ public class AiCodeGeneratorFacade {
 
     @Resource
     private AiAppNameGeneratorServiceFactory aiAppNameGeneratorServiceFactory;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
 
     public String generateAppName(String userMessage) {
         ThrowUtils.throwIf(userMessage == null, ErrorCode.PARAMS_ERROR, "用户提示词不能为空");
@@ -105,7 +110,7 @@ public class AiCodeGeneratorFacade {
             }
             case VUE_PROJECT -> {
                 TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(tokenStream);
+                yield processTokenStream(tokenStream, appId);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -118,9 +123,10 @@ public class AiCodeGeneratorFacade {
      * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
      *
      * @param tokenStream TokenStream 对象
+     * @param appId       应用 ID
      * @return Flux<String> 流式响应
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream) {
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
         return Flux.create(sink -> {
             tokenStream.onPartialResponse((String partialResponse) -> {
                         AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
@@ -135,6 +141,9 @@ public class AiCodeGeneratorFacade {
                         sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
                     })
                     .onCompleteResponse((ChatResponse response) -> {
+                        // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
+                        String projectDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                        vueProjectBuilder.buildProject(projectDirPath);
                         sink.complete();
                     })
                     .onError((Throwable error) -> {
