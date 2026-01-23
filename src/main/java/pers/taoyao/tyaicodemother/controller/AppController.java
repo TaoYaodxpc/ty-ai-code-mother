@@ -28,6 +28,8 @@ import pers.taoyao.tyaicodemother.model.dto.app.*;
 import pers.taoyao.tyaicodemother.model.entity.App;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.vo.AppVO;
+import pers.taoyao.tyaicodemother.ratelimit.annotation.RateLimit;
+import pers.taoyao.tyaicodemother.ratelimit.enums.RateLimitType;
 import pers.taoyao.tyaicodemother.service.AppService;
 import pers.taoyao.tyaicodemother.service.ProjectDownloadService;
 import pers.taoyao.tyaicodemother.service.UserService;
@@ -58,6 +60,7 @@ public class AppController {
     private ProjectDownloadService projectDownloadService;
 
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 60, message = "AI 请求过于频繁，请稍后再试")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
         // 参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误");
