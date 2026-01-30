@@ -1,10 +1,11 @@
-package pers.taoyao.tyaicodemother.controller;
+package pers.taoyao.tyaicodeuser.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.mybatisflex.core.paginate.Page;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
+import pers.taoyao.tyaicodemother.model.dto.user.*;
 import pers.taoyao.tyaicodemother.annotation.AuthCheck;
 import pers.taoyao.tyaicodemother.common.BaseResponse;
 import pers.taoyao.tyaicodemother.common.DeleteRequest;
@@ -13,11 +14,10 @@ import pers.taoyao.tyaicodemother.constant.UserConstant;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.exception.ThrowUtils;
-import pers.taoyao.tyaicodemother.model.dto.user.*;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.vo.LoginUserVO;
 import pers.taoyao.tyaicodemother.model.vo.UserVO;
-import pers.taoyao.tyaicodemother.service.UserService;
+import pers.taoyao.tyaicodeuser.service.UserService;
 
 import java.util.List;
 

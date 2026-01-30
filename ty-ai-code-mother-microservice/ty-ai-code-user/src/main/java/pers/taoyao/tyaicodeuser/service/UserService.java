@@ -1,4 +1,4 @@
-package pers.taoyao.tyaicodemother.service;
+package pers.taoyao.tyaicodeuser.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;

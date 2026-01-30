@@ -1,4 +1,4 @@
-package pers.taoyao.tyaicodemother.mapper;
+package pers.taoyao.tyaicodeuser.mapper;
 
 import com.mybatisflex.core.BaseMapper;
 import pers.taoyao.tyaicodemother.model.entity.User;

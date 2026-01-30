@@ -1,4 +1,4 @@
-package pers.taoyao.tyaicodemother.service.impl;
+package pers.taoyao.tyaicodeuser.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -11,11 +11,11 @@ import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.model.dto.user.UserQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.User;
-import pers.taoyao.tyaicodemother.mapper.UserMapper;
+import pers.taoyao.tyaicodeuser.mapper.UserMapper;
 import pers.taoyao.tyaicodemother.model.enums.UserRoleEnum;
 import pers.taoyao.tyaicodemother.model.vo.LoginUserVO;
 import pers.taoyao.tyaicodemother.model.vo.UserVO;
-import pers.taoyao.tyaicodemother.service.UserService;
+import pers.taoyao.tyaicodeuser.service.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
