@@ -49,10 +49,6 @@ import java.util.Map;
 public class AppController {
 
     @Resource
-    @Lazy
-    private InnerUserService userService;
-
-    @Resource
     private AppService appService;
 
     @Resource

@@ -37,10 +37,6 @@ public class RateLimitAspect {
     @Resource
     private RedissonClient redissonClient;
 
-    @Resource
-    @Lazy
-    private InnerUserService userService;
-
     @Before("@annotation(rateLimit)")
     public void doBefore(JoinPoint point, RateLimit rateLimit) {
         String key = generateRateLimitKey(point, rateLimit);
