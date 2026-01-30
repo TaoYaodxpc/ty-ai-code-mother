@@ -3,9 +3,9 @@ package pers.taoyao.tyaicodemother.core.handler;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.model.entity.User;
-import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import reactor.core.publisher.Flux;
 
 /**

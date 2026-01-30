@@ -5,14 +5,13 @@ import cn.hutool.core.util.ZipUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import pers.taoyao.tyaicodemother.service.ProjectDownloadService;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.exception.ThrowUtils;
-import pers.taoyao.tyaicodemother.service.ProjectDownloadService;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Set;

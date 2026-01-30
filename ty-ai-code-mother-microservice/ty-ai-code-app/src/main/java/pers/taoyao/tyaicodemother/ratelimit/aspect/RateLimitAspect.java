@@ -11,14 +11,13 @@ import org.redisson.api.RRateLimiter;
 import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Lazy;import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import pers.taoyao.tyaicodemother.ratelimit.annotation.RateLimit;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
-import pers.taoyao.tyaicodemother.model.entity.User;
-import pers.taoyao.tyaicodemother.ratelimit.annotation.RateLimit;
-import pers.taoyao.tyaicodemother.service.UserService;
+import pers.taoyao.tyaicodemother.innerservice.InnerUserService;import pers.taoyao.tyaicodemother.model.entity.User;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -39,7 +38,8 @@ public class RateLimitAspect {
     private RedissonClient redissonClient;
 
     @Resource
-    private UserService userService;
+    @Lazy
+    private InnerUserService userService;
 
     @Before("@annotation(rateLimit)")
     public void doBefore(JoinPoint point, RateLimit rateLimit) {
@@ -82,7 +82,7 @@ public class RateLimitAspect {
                     ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                     if (attributes != null) {
                         HttpServletRequest request = attributes.getRequest();
-                        User loginUser = userService.getLoginUser(request);
+                        User loginUser = InnerUserService.getLoginUser(request);
                         keyBuilder.append("user:").append(loginUser.getId());
                     } else {
                         // 无法获取请求上下文，使用IP限流

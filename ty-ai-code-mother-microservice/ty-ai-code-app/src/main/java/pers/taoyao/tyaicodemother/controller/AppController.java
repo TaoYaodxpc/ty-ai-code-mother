@@ -9,12 +9,14 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import pers.taoyao.tyaicodemother.ai.AiCodeGenTypeRoutingService;
-import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
+import pers.taoyao.tyaicodemother.ratelimit.annotation.RateLimit;
+import pers.taoyao.tyaicodemother.ratelimit.enums.RateLimitType;
+import pers.taoyao.tyaicodemother.service.AppService;
+import pers.taoyao.tyaicodemother.service.ProjectDownloadService;
 import pers.taoyao.tyaicodemother.annotation.AuthCheck;
 import pers.taoyao.tyaicodemother.common.BaseResponse;
 import pers.taoyao.tyaicodemother.common.DeleteRequest;
@@ -24,15 +26,11 @@ import pers.taoyao.tyaicodemother.constant.UserConstant;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.exception.ThrowUtils;
+import pers.taoyao.tyaicodemother.innerservice.InnerUserService;
 import pers.taoyao.tyaicodemother.model.dto.app.*;
 import pers.taoyao.tyaicodemother.model.entity.App;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.vo.AppVO;
-import pers.taoyao.tyaicodemother.ratelimit.annotation.RateLimit;
-import pers.taoyao.tyaicodemother.ratelimit.enums.RateLimitType;
-import pers.taoyao.tyaicodemother.service.AppService;
-import pers.taoyao.tyaicodemother.service.ProjectDownloadService;
-import pers.taoyao.tyaicodemother.service.UserService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -51,7 +49,8 @@ import java.util.Map;
 public class AppController {
 
     @Resource
-    private UserService userService;
+    @Lazy
+    private InnerUserService userService;
 
     @Resource
     private AppService appService;
@@ -66,7 +65,7 @@ public class AppController {
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "提示词不能为空");
         // 获取当前登录用户
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         // 调用服务生成代码
         Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
         return contentFlux.map(chunk -> {
@@ -94,7 +93,7 @@ public class AppController {
         // 检查应用 ID 是否为空
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
         // 获取当前登录用户
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         // 调用服务部署应用
         String deployUrl = appService.deployApp(appId, loginUser);
         ThrowUtils.throwIf(deployUrl == null, ErrorCode.OPERATION_ERROR, "部署失败");
@@ -117,7 +116,7 @@ public class AppController {
         App app = appService.getById(appId);
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
         // 3. 权限校验：只有应用创建者可以下载代码
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         if (!app.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限下载该应用代码");
         }
@@ -144,7 +143,7 @@ public class AppController {
     @PostMapping("/add")
     public BaseResponse<Long> addApp(@RequestBody AppAddRequest appAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         Long appId = appService.createApp(appAddRequest, loginUser);
         return ResultUtils.success(appId);
     }
@@ -161,7 +160,7 @@ public class AppController {
         if (appUpdateRequest == null || appUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         long id = appUpdateRequest.getId();
         // 判断是否存在
         App oldApp = appService.getById(id);
@@ -192,7 +191,7 @@ public class AppController {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         long id = deleteRequest.getId();
         // 判断是否存在
         App oldApp = appService.getById(id);
@@ -233,7 +232,7 @@ public class AppController {
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<AppVO>> listMyAppVOByPage(@RequestBody AppQueryRequest appQueryRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         // 限制每页最多 20 个
         long pageSize = appQueryRequest.getPageSize();
         ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "每页最多查询 20 个应用");

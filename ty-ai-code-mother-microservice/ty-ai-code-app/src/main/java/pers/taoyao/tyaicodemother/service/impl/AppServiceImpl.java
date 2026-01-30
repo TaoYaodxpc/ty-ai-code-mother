@@ -10,19 +10,23 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import pers.taoyao.tyaicodemother.ai.AiAppNameGeneratorService;
-import pers.taoyao.tyaicodemother.ai.AiCodeGenTypeRoutingService;
 import pers.taoyao.tyaicodemother.ai.AiCodeGenTypeRoutingServiceFactory;
-import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
-import pers.taoyao.tyaicodemother.constant.AppConstant;
 import pers.taoyao.tyaicodemother.core.AiCodeGeneratorFacade;
 import pers.taoyao.tyaicodemother.core.builder.VueProjectBuilder;
 import pers.taoyao.tyaicodemother.core.handler.StreamHandlerExecutor;
+import pers.taoyao.tyaicodemother.mapper.AppMapper;
+import pers.taoyao.tyaicodemother.service.AppService;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
+import pers.taoyao.tyaicodemother.ai.AiCodeGenTypeRoutingService;
+import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
+import pers.taoyao.tyaicodemother.constant.AppConstant;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.exception.ThrowUtils;
-import pers.taoyao.tyaicodemother.mapper.AppMapper;
+import pers.taoyao.tyaicodemother.innerservice.InnerScreenshotService;
+import pers.taoyao.tyaicodemother.innerservice.InnerUserService;
 import pers.taoyao.tyaicodemother.model.dto.app.AppAddRequest;
 import pers.taoyao.tyaicodemother.model.dto.app.AppQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.App;
@@ -30,12 +34,7 @@ import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.enums.ChatHistoryMessageTypeEnum;
 import pers.taoyao.tyaicodemother.model.vo.AppVO;
 import pers.taoyao.tyaicodemother.model.vo.UserVO;
-import pers.taoyao.tyaicodemother.monitor.MonitorContext;
-import pers.taoyao.tyaicodemother.monitor.MonitorContextHolder;
-import pers.taoyao.tyaicodemother.service.AppService;
-import pers.taoyao.tyaicodemother.service.ChatHistoryService;
-import pers.taoyao.tyaicodemother.service.ScreenshotService;
-import pers.taoyao.tyaicodemother.service.UserService;
+
 import reactor.core.publisher.Flux;
 
 import java.io.File;
@@ -55,7 +54,8 @@ import java.util.stream.Collectors;
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
     @Resource
-    private UserService userService;
+    @Lazy
+    private InnerUserService userService;
 
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
@@ -70,7 +70,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private VueProjectBuilder vueProjectBuilder;
 
     @Resource
-    private ScreenshotService screenshotService;
+    @Lazy
+    private InnerScreenshotService screenshotService;
 
     @Resource
     private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
@@ -115,21 +116,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR, "代码生成类型错误");
         // 5. 在调用 AI 前，先保存用户消息到数据库中
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-        // 6. 设置监控上下文（用户 ID 和 应用 ID）
-        MonitorContextHolder.setContext(
-                MonitorContext.builder()
-                        .userId(loginUser.getId().toString())
-                        .appId(appId.toString())
-                        .build()
-        );
-        // 7. 调用 AI 生成代码（流式）
+        // 6. 调用 AI 生成代码（流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
-        // 8. 收集 AI 响应的内容，并且在完成后保存记录到对话历史
-        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum)
-                .doFinally(signalType -> {
-                    // 流结束时清理上下文（无论成功/失败/取消）
-                    MonitorContextHolder.clearContext();
-                });
+        // 7. 收集 AI 响应的内容，并且在完成后保存记录到对话历史
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
     }
 
     @Override

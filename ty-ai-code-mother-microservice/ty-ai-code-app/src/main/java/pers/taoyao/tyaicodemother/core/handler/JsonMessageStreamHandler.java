@@ -6,12 +6,12 @@ import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.ai.model.message.*;
 import pers.taoyao.tyaicodemother.ai.tools.BaseTool;
 import pers.taoyao.tyaicodemother.ai.tools.ToolManager;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.enums.ChatHistoryMessageTypeEnum;
-import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import reactor.core.publisher.Flux;
 
 import java.util.HashSet;

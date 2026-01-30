@@ -4,22 +4,21 @@ import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.annotation.AuthCheck;
 import pers.taoyao.tyaicodemother.common.BaseResponse;
 import pers.taoyao.tyaicodemother.common.ResultUtils;
 import pers.taoyao.tyaicodemother.constant.UserConstant;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
 import pers.taoyao.tyaicodemother.exception.ThrowUtils;
+import pers.taoyao.tyaicodemother.innerservice.InnerUserService;
 import pers.taoyao.tyaicodemother.model.dto.chathistory.ChatHistoryQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.ChatHistory;
 import pers.taoyao.tyaicodemother.model.entity.User;
-import pers.taoyao.tyaicodemother.service.ChatHistoryService;
-import pers.taoyao.tyaicodemother.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 对话历史 控制层。
@@ -34,7 +33,8 @@ public class ChatHistoryController {
     private ChatHistoryService chatHistoryService;
 
     @Resource
-    private UserService userService;
+    @Lazy
+    private InnerUserService userService;
 
     /**
      * 分页查询某个应用的对话历史（游标查询）
@@ -53,7 +53,7 @@ public class ChatHistoryController {
         // 添加校验逻辑
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
         ThrowUtils.throwIf(pageSize <= 0 || pageSize > 20, ErrorCode.PARAMS_ERROR, "分页大小必须 < 20 且 > 0");
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = InnerUserService.getLoginUser(request);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         Page<ChatHistory> result = chatHistoryService.listAppChatHistoryByPage(appId, pageSize, lastCreateTime, loginUser);
         return ResultUtils.success(result);

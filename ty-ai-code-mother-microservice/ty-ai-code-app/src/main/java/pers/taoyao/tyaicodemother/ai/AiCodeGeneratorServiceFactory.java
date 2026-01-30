@@ -12,14 +12,12 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.ai.guardrail.PromptSafetyInputGuardrail;
-import pers.taoyao.tyaicodemother.ai.guardrail.RetryOutputGuardrail;
 import pers.taoyao.tyaicodemother.ai.model.enums.CodeGenTypeEnum;
 import pers.taoyao.tyaicodemother.ai.tools.*;
-import pers.taoyao.tyaicodemother.config.ReasoningStreamingChatModelConfig;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
-import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.utils.SpringContextUtil;
 
 import java.time.Duration;
@@ -40,16 +38,6 @@ public class AiCodeGeneratorServiceFactory {
      */
     @Resource(name = "openAiChatModel")
     private ChatModel chatModel;
-
-    /**
-     * 注入流式聊天模型
-     * 用于处理异步请求，实时返回响应内容
-     */
-/*    @Resource
-    private StreamingChatModel openAiStreamingChatModel;
-
-    @Resource
-    private StreamingChatModel reasoningStreamingChatModel;*/
 
     @Resource
     private RedisChatMemoryStore redisChatMemoryStore;

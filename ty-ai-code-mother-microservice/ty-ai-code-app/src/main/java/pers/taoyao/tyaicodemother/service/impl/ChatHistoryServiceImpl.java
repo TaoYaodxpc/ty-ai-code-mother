@@ -10,6 +10,9 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
+import pers.taoyao.tyaicodemother.mapper.ChatHistoryMapper;
+import pers.taoyao.tyaicodemother.service.AppService;
+import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import pers.taoyao.tyaicodemother.constant.UserConstant;
 import pers.taoyao.tyaicodemother.exception.BusinessException;
 import pers.taoyao.tyaicodemother.exception.ErrorCode;
@@ -17,11 +20,8 @@ import pers.taoyao.tyaicodemother.exception.ThrowUtils;
 import pers.taoyao.tyaicodemother.model.dto.chathistory.ChatHistoryQueryRequest;
 import pers.taoyao.tyaicodemother.model.entity.App;
 import pers.taoyao.tyaicodemother.model.entity.ChatHistory;
-import pers.taoyao.tyaicodemother.mapper.ChatHistoryMapper;
 import pers.taoyao.tyaicodemother.model.entity.User;
 import pers.taoyao.tyaicodemother.model.enums.ChatHistoryMessageTypeEnum;
-import pers.taoyao.tyaicodemother.service.AppService;
-import pers.taoyao.tyaicodemother.service.ChatHistoryService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,7 +34,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
-public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService{
+public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService {
 
     @Resource
     @Lazy
