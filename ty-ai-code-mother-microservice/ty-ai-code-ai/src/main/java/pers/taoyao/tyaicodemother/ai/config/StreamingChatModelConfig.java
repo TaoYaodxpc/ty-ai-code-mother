@@ -1,4 +1,4 @@
-package pers.taoyao.tyaicodemother.config;
+package pers.taoyao.tyaicodemother.ai.config;
 
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
@@ -8,21 +8,20 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-import pers.taoyao.tyaicodemother.monitor.AiModelMonitorListener;
 
 import java.util.List;
 
 /**
  *
  * @author admin
- * @date 2025/12/30
+ * @date 2026/1/22
  * @Version v1.0
  * @description
  */
 @Configuration
-@ConfigurationProperties(prefix = "langchain4j.open-ai.reasoning-streaming-chat-model")
+@ConfigurationProperties(prefix = "langchain4j.open-ai.streaming-chat-model")
 @Data
-public class ReasoningStreamingChatModelConfig {
+public class StreamingChatModelConfig {
 
     private String baseUrl;
 
@@ -32,29 +31,26 @@ public class ReasoningStreamingChatModelConfig {
 
     private Integer maxTokens;
 
-    // private Double temperature;
+    private Double temperature;
 
-    private Boolean logRequests = false;
+    private boolean logRequests;
 
-    private Boolean logResponses = false;
+    private boolean logResponses;
 
     @Resource
-    private AiModelMonitorListener aiModelMonitorListener;
 
     @Bean
     @Scope("prototype")
-    public StreamingChatModel reasoningStreamingChatModelPrototype() {
+    public StreamingChatModel streamingChatModelPrototype() {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .maxTokens(maxTokens)
-                // .temperature(temperature)
+                .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
-                .listeners(List.of(aiModelMonitorListener))
                 .build();
     }
 }
-
 

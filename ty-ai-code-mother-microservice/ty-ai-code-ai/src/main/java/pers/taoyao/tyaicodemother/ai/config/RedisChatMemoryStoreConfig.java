@@ -1,4 +1,4 @@
-package pers.taoyao.tyaicodemother.config;
+package pers.taoyao.tyaicodemother.ai.config;
 
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import lombok.Data;
